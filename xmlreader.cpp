@@ -83,7 +83,7 @@ int read_zqdm_file(const std::string& zqdm_path, std::vector<ZqdmInfo>& vecZQDM)
 
         char* token = nullptr;
 
-        if ((token = std::strtok(content, ",")) != nullptr) {         //对于每一行用,分隔符去parse，可按需换成tab键
+        if ((token = std::strtok(content, ",")) != nullptr) {         //对于每一行用,分隔符去parse，可按需换成tab键('/t')
             ZqdmInfo_.strType = token;
         }
         if ((token = std::strtok(NULL, ",")) != nullptr) {
