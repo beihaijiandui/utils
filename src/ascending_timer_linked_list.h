@@ -37,7 +37,7 @@ class sort_timer_lst
         //链表被销毁时，删除其中所有的定时器
         ~sort_timer_lst()
         {
-            utill_timer* tmp = head;
+            util_timer* tmp = head;
             while (tmp)      //tmp非空时，才可以取tmp指向的指针内容
             {
                 head = tmp->next;
@@ -66,9 +66,26 @@ class sort_timer_lst
                 return;
             }
             //如果目标定时器的超时时间小于当前链表中所有定时器的超时时间，则把该定时器
-            //插入链表头部，作为链表新的头结点。否则就要调用重载函数
-            //add_timer(util_timer* timer, util_timer* lst_head),
+            //插入链表头部，作为链表新的头结点。否则就要调用重载函数 add_timer(util_timer* timer, util_timer* lst_head),
             //把它插入到链表中的合适的位置，以保证链表的升序特性。
+            if(timer->expire < head->expire)
+            {
+                timer->next = head;
+                head->prev = timer;
+                head = timer;
+                return;
+            }
             add_timer(timer,head);
+        }
+
+        //当某个定时任务发生变化时，调整对应的定时器在链表中的位置。这个函数只考虑被调整的定时器的超时时间延长的情况，
+        //即该定时器需要往链表的尾部移动
+        void adjust_timer(util_timer* timer)
+        {
+            if(!timer)
+            {
+                return;
+            }
+            util_timer * tmp = timer->next;
         }
 };
