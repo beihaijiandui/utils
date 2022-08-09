@@ -58,6 +58,10 @@ class sort_timer_lst
                 head = tail = timer;
                 return;
             }
+            //如果目标定时器的超时时间小于当前链表中所有定时器的超时时间，则把该定时器
+            //插入链表头部，作为链表新的头结点。否则就要调用重载函数
+            //add_timer(util_timer* timer, util_timer* lst_head),
+            //把它插入到链表中的合适的位置，以保证链表的升序特性。
             if(timer->expire < head->expire)
             {
                 timer->next = head;
@@ -65,10 +69,74 @@ class sort_timer_lst
                 head = timer;
                 return;
             }
-            //如果目标定时器的超时时间小于当前链表中所有定时器的超时时间，则把该定时器
-            //插入链表头部，作为链表新的头结点。否则就要调用重载函数
-            //add_timer(util_timer* timer, util_timer* lst_head),
-            //把它插入到链表中的合适的位置，以保证链表的升序特性。
             add_timer(timer,head);
         }
+
+        //当某个定时任务发生变化时，调整对应的定时器在链表中的位置。这个函数只考虑被调整的定时器的超时时间延长的情况，即
+        //该定时器需要往链表的尾部移动
+        void adjust_timer(util_timer* timer)
+        {
+            if (!timer)
+            {
+                return;
+            }
+            util_timer* tmp = timer->next;
+            //如果被调整的目标定时器处在链表尾部，或者该定时器新的超时值仍然小于其下一个定时器的超时值，
+            //则不用调整
+            if (!tmp || (timer->expire < tmp->expire))
+            {
+                return;
+            }
+            //如果目标定时器是链表的头节点，则将该定时器从链表中取出并重新插入链表
+            if (timer == head)
+            {
+                head = head->next;
+                head->prev = nullptr;
+                timer->next = nullptr;   //因为是先查询到的链表中的timer，要断开本来的前后指向的连接
+                add_timer(timer, head);
+            }
+            else                        //如果目标定时器不是链表的头结点，则将该定时器从链表中取出，然后插入其原来所在位置之后的
+            {                           //部分链表中
+                timer->prev->next = timer->next;
+                timer->next->prev = timer->prev;
+                add_timer(timer, timer->next);
+            }
+        }
+    private:
+        //一个重载的辅助函数，他被公有的add_timer函数和adjust_timer函数调用，该函数表示将目标定时器timer
+        //添加到lst_head之后的公共链表中
+        void add_timer(util_timer* timer, util_timer* lst_head)
+        {
+            util_timer* prev = lst_head;
+            util_timer* tmp = prev->next;
+            //遍历lst_head节点之后的部分链表，直到找到一个超时时间大于目标定时器的超时时间的节点，并将目标
+            //定时器插入该节点之前
+            while (tmp)
+            {
+                if (timer->expire < tmp->expire)
+                {
+                    prev->next = timer;
+                    timer->next = tmp; 
+                    tmp->prev = timer;
+                    timer->prev = prev;
+                    break;
+                }
+                prev = tmp;
+                tmp = tmp->next;
+            }
+            //
+            if (!tmp)
+            {
+                prev->next = timer;
+                timer->next = nullptr;
+                timer->prev = prev;
+                tail = timer;
+            }
+        }
+    private:
+        //链表本身不需要考虑前指后指，有头尾节点即可
+        util_timer* head;
+        util_timer* tail;
 };
+
+#endif 
