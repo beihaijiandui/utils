@@ -37,7 +37,7 @@ class sort_timer_lst
         //链表被销毁时，删除其中所有的定时器
         ~sort_timer_lst()
         {
-            utill_timer* tmp = head;
+            util_timer* tmp = head;
             while (tmp)      //tmp非空时，才可以取tmp指向的指针内容
             {
                 head = tmp->next;
