@@ -102,6 +102,46 @@ class sort_timer_lst
                 add_timer(timer, timer->next);
             }
         }
+
+        //将目标定时器timer从链表中删除
+        void del_timer(util_timer* timer)
+        {
+            if(!timer)
+            {
+                return;
+            }
+            //链表中只有一个定时器，即是目标定时器
+            if((head==timer)&&(tail==timer))
+            {
+                delete timer;
+                head=nullptr;
+                tail=nullptr;
+                return;
+            }
+            //如果链表中至少有2个定时器，且目标定时器是链表的头结点，则将链表的头结点重置为原头结点的下一个节点
+            //然后删除目标定时器
+            if(timer == head)
+            {
+                head= head->next;
+                head->prev=nullptr;
+                delete timer;
+                return;
+            }
+            //如果链表中至少有2个定时器，且目标定时器是链表的尾结点，则将链表的尾结点重置为原尾结点的前一个节点
+            //然后删除目标定时器
+            if(timer==tail)
+            {
+                tail = tail->prev;
+                tail->next = nullptr;
+                delete timer;
+                return;
+            }
+            //如果目标定时器位于链表的中间，则把他前后的定时器串联起来，然后删除目标定时器
+            timer->prev->next = timer->next;
+            timer->next->prev = timer->prev;
+            delete timer;
+            return;
+        }
     private:
         //一个重载的辅助函数，他被公有的add_timer函数和adjust_timer函数调用，该函数表示将目标定时器timer
         //添加到lst_head之后的公共链表中
