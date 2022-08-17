@@ -4,10 +4,10 @@
 #include <time.h>
 
 #define BUFFER_SIZE 64
-class util_timer;     //前向声明
+class util_timer;     //ǰ������
 
-//用户数据结构
-//客户端socket地址、socket文件描述符、读缓存和定时器
+//�û����ݽṹ
+//�ͻ���socket��ַ��socket�ļ���������������Ͷ�ʱ��
 struct client_data
 {
     sockaddr_in address;
@@ -16,29 +16,29 @@ struct client_data
     util_timer* timer;
 };
 
-//定时器类
+//��ʱ����
 class util_timer
 {
     public:
         util_timer():prev(nullptr),next(nullptr){}
     public:
-        time_t expire;                   //任务的超时时间，这里使用绝对时间
-        void （*cb_func）(client_data*); //任务回调函数
-        client_data* user_data;         //回调函数处理的客户数据，由定时器的执行者传递给回调函数
-        util_timer* prev;               //指向前一个定时器
-        util_timer* next;               //指向下一个定时器
+        time_t expire;                   //����ĳ�ʱʱ�䣬����ʹ�þ���ʱ��
+        void ��*cb_func��(client_data*); //����ص�����
+        client_data* user_data;         //�ص����������Ŀͻ����ݣ��ɶ�ʱ����ִ���ߴ��ݸ��ص�����
+        util_timer* prev;               //ָ��ǰһ����ʱ��
+        util_timer* next;               //ָ����һ����ʱ��
 };
 
-//定时器链表，升序、双向链表，有头结点和尾结点
+//��ʱ������������˫����������ͷ����β���
 class sort_timer_lst
 {
     public:
         sort_timer_lst():head(nullptr),tail(nullptr){}
-        //链表被销毁时，删除其中所有的定时器
+        //����������ʱ��ɾ���������еĶ�ʱ��
         ~sort_timer_lst()
         {
             util_timer* tmp = head;
-            while (tmp)      //tmp非空时，才可以取tmp指向的指针内容
+            while (tmp)      //tmp�ǿ�ʱ���ſ���ȡtmpָ���ָ������
             {
                 head = tmp->next;
                 delete tmp;
@@ -46,7 +46,7 @@ class sort_timer_lst
             }
         }
 
-        //将目标定时器timer添加到链表中
+        //��Ŀ�궨ʱ��timer���ӵ�������
         void add_timer(util_timer* timer)
         {
             if(!timer)
@@ -58,10 +58,10 @@ class sort_timer_lst
                 head = tail = timer;
                 return;
             }
-            //如果目标定时器的超时时间小于当前链表中所有定时器的超时时间，则把该定时器
-            //插入链表头部，作为链表新的头结点。否则就要调用重载函数
+            //���Ŀ�궨ʱ���ĳ�ʱʱ��С�ڵ�ǰ���������ж�ʱ���ĳ�ʱʱ�䣬��Ѹö�ʱ��
+            //��������ͷ������Ϊ�����µ�ͷ��㡣�����Ҫ�������غ���
             //add_timer(util_timer* timer, util_timer* lst_head),
-            //把它插入到链表中的合适的位置，以保证链表的升序特性。
+            //�������뵽�����еĺ��ʵ�λ�ã��Ա�֤�������������ԡ�
             if(timer->expire < head->expire)
             {
                 timer->next = head;
@@ -72,8 +72,8 @@ class sort_timer_lst
             add_timer(timer,head);
         }
 
-        //当某个定时任务发生变化时，调整对应的定时器在链表中的位置。这个函数只考虑被调整的定时器的超时时间延长的情况，即
-        //该定时器需要往链表的尾部移动
+        //��ĳ����ʱ�������仯ʱ��������Ӧ�Ķ�ʱ���������е�λ�á��������ֻ���Ǳ������Ķ�ʱ���ĳ�ʱʱ���ӳ����������
+        //�ö�ʱ����Ҫ��������β���ƶ�
         void adjust_timer(util_timer* timer)
         {
             if (!timer)
@@ -81,36 +81,36 @@ class sort_timer_lst
                 return;
             }
             util_timer* tmp = timer->next;
-            //如果被调整的目标定时器处在链表尾部，或者该定时器新的超时值仍然小于其下一个定时器的超时值，
-            //则不用调整
+            //�����������Ŀ�궨ʱ����������β�������߸ö�ʱ���µĳ�ʱֵ��ȻС������һ����ʱ���ĳ�ʱֵ��
+            //���õ���
             if (!tmp || (timer->expire < tmp->expire))
             {
                 return;
             }
-            //如果目标定时器是链表的头节点，则将该定时器从链表中取出并重新插入链表
+            //���Ŀ�궨ʱ����������ͷ�ڵ㣬�򽫸ö�ʱ����������ȡ�������²�������
             if (timer == head)
             {
                 head = head->next;
                 head->prev = nullptr;
-                timer->next = nullptr;   //因为是先查询到的链表中的timer，要断开本来的前后指向的连接
+                timer->next = nullptr;   //��Ϊ���Ȳ�ѯ���������е�timer��Ҫ�Ͽ�������ǰ��ָ�������
                 add_timer(timer, head);
             }
-            else                        //如果目标定时器不是链表的头结点，则将该定时器从链表中取出，然后插入其原来所在位置之后的
-            {                           //部分链表中
+            else                        //���Ŀ�궨ʱ������������ͷ��㣬�򽫸ö�ʱ����������ȡ����Ȼ�������ԭ������λ��֮���
+            {                           //����������
                 timer->prev->next = timer->next;
                 timer->next->prev = timer->prev;
                 add_timer(timer, timer->next);
             }
         }
 
-        //将目标定时器timer从链表中删除
+        //��Ŀ�궨ʱ��timer��������ɾ��
         void del_timer(util_timer* timer)
         {
             if(!timer)
             {
                 return;
             }
-            //链表中只有一个定时器，即是目标定时器
+            //������ֻ��һ����ʱ��������Ŀ�궨ʱ��
             if((head==timer)&&(tail==timer))
             {
                 delete timer;
@@ -118,8 +118,8 @@ class sort_timer_lst
                 tail=nullptr;
                 return;
             }
-            //如果链表中至少有2个定时器，且目标定时器是链表的头结点，则将链表的头结点重置为原头结点的下一个节点
-            //然后删除目标定时器
+            //���������������2����ʱ������Ŀ�궨ʱ����������ͷ��㣬��������ͷ�������Ϊԭͷ������һ���ڵ�
+            //Ȼ��ɾ��Ŀ�궨ʱ��
             if(timer == head)
             {
                 head= head->next;
@@ -127,8 +127,8 @@ class sort_timer_lst
                 delete timer;
                 return;
             }
-            //如果链表中至少有2个定时器，且目标定时器是链表的尾结点，则将链表的尾结点重置为原尾结点的前一个节点
-            //然后删除目标定时器
+            //���������������2����ʱ������Ŀ�궨ʱ����������β��㣬��������β�������Ϊԭβ����ǰһ���ڵ�
+            //Ȼ��ɾ��Ŀ�궨ʱ��
             if(timer==tail)
             {
                 tail = tail->prev;
@@ -136,14 +136,14 @@ class sort_timer_lst
                 delete timer;
                 return;
             }
-            //如果目标定时器位于链表的中间，则把他前后的定时器串联起来，然后删除目标定时器
+            //���Ŀ�궨ʱ��λ���������м䣬�����ǰ��Ķ�ʱ������������Ȼ��ɾ��Ŀ�궨ʱ��
             timer->prev->next = timer->next;
             timer->next->prev = timer->prev;
             delete timer;
             return;
         }
 
-        //SIGALRM信号每次被触发就在其信号处理函数（如果使用统一事件源，则是主函数）中执行一次tick函数，以处理链表上到期的任务
+        //SIGALRM�ź�ÿ�α������������źŴ������������ʹ��ͳһ�¼�Դ����������������ִ��һ��tick�������Դ��������ϵ��ڵ�����
         void tick()
         {
             if (!head)
@@ -151,37 +151,37 @@ class sort_timer_lst
                 return;
             }
             printf("timer tick\n");
-            //获取系统当前时间
+            //��ȡϵͳ��ǰʱ��
             time_t cur = time(NULL);
             util_timer* tmp = head;
-            //从头结点开始依次处理每个定时器，直到遇到一个尚未到期的定时器，这就是定时器的核心逻辑
+            //��ͷ��㿪ʼ���δ���ÿ����ʱ����ֱ������һ����δ���ڵĶ�ʱ��������Ƕ�ʱ���ĺ����߼�
             while (tmp)
             {
-                //因为每个定时器都使用绝对时间作为超时值，所以我们可以把定时器的超时值和系统当前时间比较以判断定时器是否到期
+                //��Ϊÿ����ʱ����ʹ�þ���ʱ����Ϊ��ʱֵ���������ǿ��԰Ѷ�ʱ���ĳ�ʱֵ��ϵͳ��ǰʱ��Ƚ����ж϶�ʱ���Ƿ���
                 if (cur < tmp->expire)
                 {
                     break;
                 }
                 tmp->cb_func(tmp->user_data);
-                //执行完定时器中的定时任务之后，就将它从链表中删除，并重置链表头结点
+                //ִ���궨ʱ���еĶ�ʱ����֮�󣬾ͽ�����������ɾ��������������ͷ���
                 head = tmp->next;
                 if (head)
                 {
                     head->prev = nullptr;
                 }
                 delete tmp;
-                tmp = head;           //要么都不过期，要么不止一个过期，所以要while逐个找一下；每次调用一次tick都是一次排查过期定时器的寻找
+                tmp = head;           //Ҫô�������ڣ�Ҫô��ֹһ�����ڣ�����Ҫwhile�����һ�£�ÿ�ε���һ��tick����һ���Ų���ڶ�ʱ����Ѱ��
             }
         }
     private:
-        //一个重载的辅助函数，他被公有的add_timer函数和adjust_timer函数调用，该函数表示将目标定时器timer
-        //添加到lst_head之后的公共链表中
+        //һ�����صĸ����������������е�add_timer������adjust_timer�������ã��ú�����ʾ��Ŀ�궨ʱ��timer
+        //���ӵ�lst_head֮��Ĺ���������
         void add_timer(util_timer* timer, util_timer* lst_head)
         {
             util_timer* prev = lst_head;
             util_timer* tmp = prev->next;
-            //遍历lst_head节点之后的部分链表，直到找到一个超时时间大于目标定时器的超时时间的节点，并将目标
-            //定时器插入该节点之前
+            //����lst_head�ڵ�֮��Ĳ���������ֱ���ҵ�һ����ʱʱ�����Ŀ�궨ʱ���ĳ�ʱʱ��Ľڵ㣬����Ŀ��
+            //��ʱ������ýڵ�֮ǰ
             while (tmp)
             {
                 if (timer->expire < tmp->expire)
@@ -205,7 +205,7 @@ class sort_timer_lst
             }
         }
     private:
-        //链表本身不需要考虑前指后指，有头尾节点即可
+        //������������Ҫ����ǰָ��ָ����ͷβ�ڵ㼴��
         util_timer* head;
         util_timer* tail;
 };
