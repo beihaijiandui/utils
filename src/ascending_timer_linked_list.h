@@ -142,6 +142,37 @@ class sort_timer_lst
             delete timer;
             return;
         }
+
+        //SIGALRM信号每次被触发就在其信号处理函数（如果使用统一事件源，则是主函数）中执行一次tick函数，以处理链表上到期的任务
+        void tick()
+        {
+            if (!head)
+            {
+                return;
+            }
+            printf("timer tick\n");
+            //获取系统当前时间
+            time_t cur = time(NULL);
+            util_timer* tmp = head;
+            //从头结点开始依次处理每个定时器，直到遇到一个尚未到期的定时器，这就是定时器的核心逻辑
+            while (tmp)
+            {
+                //因为每个定时器都使用绝对时间作为超时值，所以我们可以把定时器的超时值和系统当前时间比较以判断定时器是否到期
+                if (cur < tmp->expire)
+                {
+                    break;
+                }
+                tmp->cb_func(tmp->user_data);
+                //执行完定时器中的定时任务之后，就将它从链表中删除，并重置链表头结点
+                head = tmp->next;
+                if (head)
+                {
+                    head->prev = nullptr;
+                }
+                delete tmp;
+                tmp = head;           //要么都不过期，要么不止一个过期，所以要while逐个找一下；每次调用一次tick都是一次排查过期定时器的寻找
+            }
+        }
     private:
         //一个重载的辅助函数，他被公有的add_timer函数和adjust_timer函数调用，该函数表示将目标定时器timer
         //添加到lst_head之后的公共链表中
